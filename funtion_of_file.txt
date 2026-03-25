@@ -1,0 +1,32 @@
+CHỨC NĂNG TỪNG FILE (TÓM TẮT)
+*main.py
+    Vòng lặp chính
+    Gọi các module
+*config.py
+    GPIO pin
+    ROI camera
+    Timer delay
+    Token telegram
+*vision/camera.py
+    Mở webcam
+    Đọc frame
+*motion_detector.py
+    Detect có người trong ROI
+*face_detector.py
+    Detect mắt nhắm → ngủ gật
+*posture_detector.py
+    Detect cúi đầu
+*state_machine.py
+    Quyết định bật/tắt đèn
+    Delay 10s
+*study_timer.py
+    Đếm giờ học
+    Ghi file log
+*relay.py
+    Điều khiển GPIO
+*telegram_bot.py
+    Gửi cảnh báo + ảnh
+*web/app.py
+        Web server
+        Stream video
+        Nhận lệnh voice

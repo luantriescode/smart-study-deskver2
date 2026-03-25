@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Desk Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card h2 {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 15px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-on {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-on:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-off {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-off:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            color: #333;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .video-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+        
+        .video-container img {
+            width: 100%;
+            border-radius: 10px;
+            max-height: 500px;
+            object-fit: cover;
+        }
+        
+        .events-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .event-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+        
+        .event-time {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: loading 1.5s infinite;
+            margin-left: 5px;
+        }
+        
+        @keyframes loading {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📚 Smart Study Desk Dashboard</h1>
+            <p>Intelligent Learning Environment Control System</p>
+        </div>
+        
+        <!-- Grid Layout -->
+        <div class="grid">
+            <!-- Light Control Card -->
+            <div class="card">
+                <h2>
+                    💡 Light Control
+                    <span class="status-indicator"></span>
+                </h2>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value" id="light-status">--</span>
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="btn-on" onclick="turnLightOn()">Turn On</button>
+                    <button class="btn-off" onclick="turnLightOff()">Turn Off</button>
+                </div>
+            </div>
+            
+            <!-- System Status Card -->
+            <div class="card">
+                <h2>
+                    ⚙️ System Status
+                    <span class="status-indicator"></span>
+                </h2>
+                
+                <div class="stat-row">
+                    <span class="stat-label">State Machine</span>
+                    <span class="stat-value" id="state-machine">--</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Countdown</span>
+                    <span class="stat-value" id="countdown">--</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Camera</span>
+                    <span class="stat-value" id="camera-status">--</span>
+                </div>
+            </div>
+            
+            <!-- Statistics Card -->
+            <div class="card">
+                <h2>📊 Study Statistics</h2>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Current Session</span>
+                    <span class="stat-value" id="current-session">--</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Total Sessions</span>
+                    <span class="stat-value" id="total-sessions">--</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Sleep Events</span>
+                    <span class="stat-value" id="sleep-count">--</span>
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Posture Events</span>
+                    <span class="stat-value" id="posture-count">--</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Video Stream -->
+        <div class="video-container">
+            <h2>🎥 Live Camera Feed</h2>
+            <img id="video-stream" src="/video_feed" alt="Camera Stream">
+        </div>
+        
+        <!-- Recent Events -->
+        <div class="events-container">
+            <h2>📝 Recent Events</h2>
+            <div id="events-list">
+                <p style="color: #999; text-align: center;">Loading events<span class="loading"></span></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh intervals
+        const REFRESH_STATUS = 2000;  // 2s
+        const REFRESH_STATS = 5000;   // 5s
+        const REFRESH_EVENTS = 10000; // 10s
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus();
+            updateStats();
+            updateEvents();
+            
+            setInterval(updateStatus, REFRESH_STATUS);
+            setInterval(updateStats, REFRESH_STATS);
+            setInterval(updateEvents, REFRESH_EVENTS);
+        });
+        
+        // Update Status
+        function updateStatus() {
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    // Light status
+                    const lightStatus = data.relay ? data.relay.state : 'N/A';
+                    document.getElementById('light-status').textContent = lightStatus;
+                    
+                    // State machine
+                    const state = data.state_machine ? data.state_machine.state : 'N/A';
+                    document.getElementById('state-machine').textContent = state;
+                    
+                    // Countdown
+                    const countdown = data.state_machine ? 
+                        data.state_machine.countdown.toFixed(1) + 's' : 'N/A';
+                    document.getElementById('countdown').textContent = countdown;
+                    
+                    // Camera
+                    const camera = data.camera ? data.camera.status : 'N/A';
+                    document.getElementById('camera-status').textContent = camera;
+                })
+                .catch(e => console.error('Status error:', e));
+        }
+        
+        // Update Stats
+        function updateStats() {
+            fetch('/api/stats')
+                .then(r => r.json())
+                .then(data => {
+                    const toTime = (seconds) => {
+                        const h = Math.floor(seconds / 3600);
+                        const m = Math.floor((seconds % 3600) / 60);
+                        const s = Math.floor(seconds % 60);
+                        return `${h}h ${m}m ${s}s`;
+                    };
+                    
+                    document.getElementById('current-session').textContent = 
+                        toTime(data.current_session || 0);
+                    document.getElementById('total-sessions').textContent = 
+                        data.total_sessions || 0;
+                    document.getElementById('sleep-count').textContent = 
+                        data.sleep_count || 0;
+                    document.getElementById('posture-count').textContent = 
+                        data.posture_count || 0;
+                })
+                .catch(e => console.error('Stats error:', e));
+        }
+        
+        // Update Events
+        function updateEvents() {
+            fetch('/api/events?limit=10')
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('events-list');
+                    
+                    if (!data.events || data.events.length === 0) {
+                        list.innerHTML = '<p style="color: #999; text-align: center;">No events yet</p>';
+                        return;
+                    }
+                    
+                    list.innerHTML = data.events.reverse().map(event => {
+                        const time = new Date(event.datetime).toLocaleTimeString();
+                        return `
+                            <div class="event-item">
+                                <strong>${event.type}</strong>
+                                <br>
+                                <span class="event-time">${time}</span>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(e => console.error('Events error:', e));
+        }
+        
+        // Light Control
+        function turnLightOn() {
+            fetch('/api/light/on', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => alert(data.message || 'Light turned ON'))
+                .catch(e => alert('Error: ' + e));
+        }
+        
+        function turnLightOff() {
+            fetch('/api/light/off', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => alert(data.message || 'Light turned OFF'))
+                .catch(e => alert('Error: ' + e));
+        }
+    </script>
+</body>
+</html>

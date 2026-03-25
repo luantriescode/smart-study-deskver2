@@ -1,0 +1,86 @@
+🚀 ⭐ QUY TRÌNH TRIỂN KHAI CHI TIẾT (EXECUTION PLAN)
+
+👉 Đây là plan thực chiến từng bước
+⭐ STEP 1 — INSTALL OS + NETWORK (1 ngày)
+        Flash Raspberry Pi OS Lite
+        Enable SSH
+        LAN DHCP
+        SSH login
+        Update hệ thống
+        Set IP tĩnh
+        ✅ Output
+        → Raspberry online ổn định
+
+⭐ STEP 2 — TEST GPIO + RELAY (0.5 ngày)
+        Cài thư viện GPIO
+        Script bật tắt relay
+        Test đèn 220V thật
+        ✅ Output
+        → Light control ready
+
+⭐ STEP 3 — TEST CAMERA PIPELINE (1 ngày)
+        Cài OpenCV
+        Đọc webcam
+        Resize frame
+        Loop realtime
+        Test CPU load
+        ✅ Output
+        → Vision pipeline ổn định
+
+⭐ STEP 4 — PERSON DETECTION MVP (2 ngày)
+        ROI config
+        Motion detection
+        State machine bật/tắt đèn
+        Timer 10s
+        ✅ Output
+        → Auto Light hoạt động
+        🔥 Đây là milestone lớn.
+
+⭐ STEP 5 — SLEEP DETECTION (2 ngày)
+        Haar face cascade
+        Eye cascade
+        Timer logic
+        ✅ Output
+        → Detect ngủ gật
+
+⭐ STEP 6 — POSTURE DETECTION (1 ngày)
+        Tracking vị trí đầu
+        Ngưỡng cúi đầu
+        ✅ Output
+        → Detect sai tư thế
+
+⭐ STEP 7 — TELEGRAM ALERT (1 ngày)
+        Tạo bot
+        Gửi text
+        Gửi ảnh
+        ✅ Output
+        → Remote monitoring
+
+⭐ STEP 8 — WEB DASHBOARD (2 ngày)
+        Flask server
+        Stream camera
+        Nút bật đèn
+        Voice control
+        ✅ Output
+        → User interface
+
+⭐ STEP 9 — SYSTEM TEST + OPTIMIZATION (2 ngày)
+        Run 3h liên tục
+        Test sai AI
+        Test relay nóng
+        Tuning threshold
+        ✅ Output
+        → Stability ready
+
+⭐ STEP 10 — PRODUCTION MODE (1 ngày)
+
+        Auto start service
+        Log file
+        Config file
+        ✅ Output
+        → Sản phẩm hoàn chỉnh
+hostname: smartdesk
+user: luan_pi
+pass: 456779
+MAC:B8:27:EB:5C:3C:B1
+ip: 192.168.1.8

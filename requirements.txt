@@ -1,0 +1,21 @@
+# Core dependencies
+opencv-python==4.8.0.76
+Flask==3.0.0
+requests==2.31.0
+
+# Raspberry Pi specific
+RPi.GPIO==0.7.0  # For GPIO control (Raspberry Pi only)
+
+# Optional but recommended
+numpy==1.24.3
+python-dotenv==1.0.0
+
+# Development
+pytest==7.4.0
+black==23.7.0
+flake8==6.0.0
+
+# Optional: Advanced features
+# dlib==19.24.2      # For advanced posture detection
+# imutils==0.5.4     # Image utilities
+# tensorflow==2.13.0 # If using TensorFlow models

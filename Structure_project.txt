@@ -1,0 +1,148 @@
+smart-study-desk/
+│
+├── main.py
+├── config.py
+│
+├── vision/
+│   ├── camera.py
+│   ├── motion_detector.py
+│   ├── face_detector.py
+│   └── posture_detector.py
+│
+├── core/
+│   ├── state_machine.py
+│   ├── study_timer.py
+│
+├── hardware/
+│   ├── relay.py
+│
+├── communication/
+│   ├── telegram_bot.py
+│
+├── web/
+│   ├── app.py
+│   ├── templates/
+│   └── static/
+│
+└── logs/
+
+Luôn đi theo thứ tự:
+
+System → Hardware → Vision → Logic → AI → Network → UI → Optimization → Production
+        SƠ ĐỒ SYSTEM FLOW (Level 1)
+
+        ┌───────────────┐
+        │  USB Webcam   │
+        └──────┬────────┘
+               │
+               ▼
+        ┌───────────────┐
+        │ Vision Engine │
+        │ (OpenCV nhẹ)  │
+        └──────┬────────┘
+               │
+               ▼
+        ┌───────────────┐
+        │ Event Detector│
+        │ - Person ROI  │
+        │ - Sleep       │
+        │ - Posture     │
+        └──────┬────────┘
+               │
+               ▼
+        ┌───────────────┐
+        │ State Machine │
+        │ - Auto Light  │
+        │ - Delay logic │
+        └───┬─────┬─────┘
+            │     │
+            │     │
+            ▼     ▼
+     ┌────────┐ ┌──────────────┐
+     │ Relay  │ │ Telegram Bot │
+     │ GPIO   │ │ Send Alert   │
+     └────┬───┘ └──────┬───────┘
+          │              │
+          ▼              ▼
+      ┌────────┐     Internet
+      │  Đèn   │
+      │ 220V   │
+      └────────┘
+SONG SONG (Control Layer)
+
+Laptop / Phone
+      │
+      ▼
+  Web Dashboard (Flask)
+      │
+      ▼
+ Command Queue
+      │
+      ▼
+ State Machine
+
+
+ ⭐ FLOW CHI TIẾT (Level 2 – Runtime)
+
+ main loop:
+
+capture frame
+   ↓
+resize 320x240
+   ↓
+motion detect trong ROI
+
+IF person detected:
+      start study session
+      bật đèn
+
+IF person lost:
+      start 10s timer
+      tắt đèn
+
+IF face detected:
+      check eye status
+      check head angle
+
+IF sleep OR bad posture:
+      chụp ảnh
+      gửi telegram
+
+⭐ FLOW PHẦN CỨNG (Electrical)
+
+Raspberry GPIO
+      ↓
+Relay Module 5V
+      ↓
+AC Line 220V
+      ↓
+Đèn bàn học
+    --> ⚠️ Relay chỉ đóng/ngắt dây L
+        ⚠️ Phải cách điện kỹ.
+
+⭐ FLOW MẠNG
+Router
+ ├── Raspberry (LAN)
+ ├── Laptop (Web control)
+ └── Internet → Telegram API
+
+
+ ⭐ FLOW HOẠT ĐỘNG THỰC TẾ (FINAL)
+        Camera → Resize 320x240 → ROI Crop
+                ↓
+        Background Subtraction
+                ↓
+        Person Present ?
+
+        YES → bật đèn + start study session
+
+        NO → start 10s countdown → tắt đèn
+
+        Song song:
+
+        Face detect
+        ↓
+        Eye closed >5s → ngủ gật
+        Head thấp → sai tư thế
+        ↓
+        Capture image → Telegram alert
