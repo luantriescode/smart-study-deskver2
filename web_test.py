@@ -28,14 +28,22 @@ cam = Camera(
 def generate_frames():
     while True:
         success, frame = cam.read()
-        if not success:
-            break
+        if not success or frame is None:
+            continue
         
-        # Vẽ khung xanh ROI để bạn căn chỉnh vị trí ngồi
+        # 1. Resize nhỏ lại thêm một chút để giảm tải (tùy chọn)
+        # frame = cv2.resize(frame, (160, 120)) # Thử nếu vẫn đứt hình
+        
+        # 2. Vẽ ROI
         frame_display = cam.draw_roi(frame, (config.ROI_X, config.ROI_Y, config.ROI_W, config.ROI_H))
         
-        # Chuyển frame thành JPEG để truyền qua Web
-        ret, buffer = cv2.imencode('.jpg', frame_display)
+        # 3. Nén JPEG mạnh hơn (quality=50) để giảm dung lượng gói tin truyền qua mạng
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+        ret, buffer = cv2.imencode('.jpg', frame_display, encode_param)
+        
+        if not ret:
+            continue
+            
         frame_bytes = buffer.tobytes()
         
         yield (b'--frame\r\n'
