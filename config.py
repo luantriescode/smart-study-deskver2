@@ -1,185 +1,64 @@
-"""
-CONFIG.PY - Cấu hình toàn hệ thống
-===============================================
-Quản lý:
-  - GPIO pin cho relay
-  - Camera ROI (Region of Interest)
-  - Timer delay logic
-  - Telegram bot token
-  - Các threshold AI
-"""
-
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load các biến từ file .env
+load_dotenv()
 
 # ============================================
 # 1️⃣ HARDWARE - GPIO CONFIGURATION
 # ============================================
-
-# Relay control pin (BCM numbering)
-RELAY_PIN = 17  # GPIO 17 (Pin 11 trên RPi B+)
-RELAY_GPIO_MODE = "BCM"  # Dùng BCM numbering
-
-# LED status indicator (optional)
-LED_PIN = 27  # GPIO 27 để báo trạng thái
+RELAY_PIN = 17 
+RELAY_GPIO_MODE = "BCM"
 
 # ============================================
-# 2️⃣ CAMERA CONFIGURATION
+# 2️⃣ CAMERA CONFIGURATION (Fixed for Pi B+)
 # ============================================
-
-CAMERA_INDEX = 0  # USB webcam là device 0
-CAMERA_WIDTH = 640
-CAMERA_HEIGHT = 480
-CAMERA_FPS = 30
-
-# Resize nhỏ để giảm CPU
-FRAME_WIDTH = 320
+CAMERA_INDEX = 0
+CAMERA_WIDTH  = 320
+CAMERA_HEIGHT = 240
+CAMERA_FPS    = 30
+CAMERA_FOURCC = "MJPG"
+FRAME_WIDTH  = 320
 FRAME_HEIGHT = 240
+CAMERA_BUFFER_SIZE = 1
+CAMERA_WARMUP_FRAMES = 10
 
-# Region of Interest (ROI) - vùng phát hiện người
-# Định dạng: (x, y, w, h) - top-left corner + width, height
-ROI_X = 50
-ROI_Y = 50
-ROI_W = 220  # 320 - 100
-ROI_H = 140  # 240 - 100
-
-# ============================================
-# 3️⃣ MOTION DETECTION
-# ============================================
-
-# Background subtraction threshold
-MOTION_THRESHOLD = 500  # Pixels thay đổi để trigger
-MOTION_MIN_AREA = 100   # Diện tích tối thiểu (px²)
+# ROI - vùng phát hiện người [cite: 15, 18]
+ROI_X, ROI_Y = 50, 50
+ROI_W, ROI_H = 220, 140
 
 # ============================================
-# 4️⃣ FACE & EYE DETECTION
+# 3️⃣ AI THRESHOLDS [cite: 12, 18]
 # ============================================
-
-# Haar cascade paths (có sẵn trong OpenCV)
-FACE_CASCADE = "haarcascade_frontalface_default.xml"
-EYE_CASCADE = "haarcascade_eye.xml"
-
-# Eye closure detection
-EYE_CLOSED_THRESHOLD = 0.3  # Ratio mắt đóng
-EYE_CLOSED_FRAMES = 150     # ~5s ở 30fps (150/30 = 5 giây)
+MOTION_THRESHOLD = 500
+EYE_CLOSED_FRAMES = 75  # ~5s @ 15fps [cite: 5]
+PERSON_LOST_DELAY = 10  # [cite: 12]
 
 # ============================================
-# 5️⃣ POSTURE DETECTION
+# 4️⃣ SENSITIVE DATA (Đọc từ .env) 
 # ============================================
+# Nếu không tìm thấy trong .env, sẽ để trống hoặc báo lỗi
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Head angle threshold (độ)
-HEAD_DOWN_THRESHOLD = 20  # Cúi quá 20° → cảnh báo
-HEAD_UP_THRESHOLD = -15   # Ngẩng quá 15° → cảnh báo
-
-# ============================================
-# 6️⃣ STATE MACHINE TIMERS
-# ============================================
-
-# Khi người rời đi → chờ 10s rồi tắt đèn
-PERSON_LOST_DELAY = 10  # seconds
-
-# Study session timeout (vd: 1 giờ không có hoạt động → reset)
-SESSION_TIMEOUT = 3600  # seconds
+WEB_HOST = os.getenv("WEB_HOST", "0.0.0.0")
+WEB_PORT = int(os.getenv("WEB_PORT", 5000))
 
 # ============================================
-# 7️⃣ TELEGRAM CONFIGURATION
+# 5️⃣ PATHS & LOGGING
 # ============================================
-
-TELEGRAM_TOKEN = os.getenv(
-    "TELEGRAM_TOKEN",
-    "YOUR_BOT_TOKEN_HERE"  # Replace với token thật từ @BotFather
-)
-
-TELEGRAM_CHAT_ID = os.getenv(
-    "TELEGRAM_CHAT_ID",
-    "YOUR_CHAT_ID_HERE"  # Replace với chat ID của bạn
-)
-
-# Alert settings
-TELEGRAM_ALERT_COOLDOWN = 30  # seconds - tránh spam cảnh báo
-SEND_PHOTO_ON_ALERT = True
-
-# ============================================
-# 8️⃣ WEB DASHBOARD
-# ============================================
-
-WEB_HOST = "0.0.0.0"  # Cho phép truy cập từ bất kỳ IP nào
-WEB_PORT = 5000
-WEB_DEBUG = False  # Production = False
-
-# ============================================
-# 9️⃣ LOGGING
-# ============================================
-
-LOG_DIR = Path(__file__).parent / "logs"
+PROJECT_ROOT = Path(__file__).parent
+LOG_DIR = PROJECT_ROOT / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
-LOG_FILE = LOG_DIR / "study_system.log"
-LOG_LEVEL = "INFO"  # DEBUG, INFO, WARNING, ERROR
-
-# ============================================
-# 🔟 PATHS
-# ============================================
-
-PROJECT_ROOT = Path(__file__).parent
-VISION_DIR = PROJECT_ROOT / "vision"
-CORE_DIR = PROJECT_ROOT / "core"
-HARDWARE_DIR = PROJECT_ROOT / "hardware"
-COMMUNICATION_DIR = PROJECT_ROOT / "communication"
-WEB_DIR = PROJECT_ROOT / "web"
-
-# Temp folder cho screenshots
-TEMP_DIR = PROJECT_ROOT / "temp"
-TEMP_DIR.mkdir(exist_ok=True)
-
-# ============================================
-# 1️⃣1️⃣ DEBUG FLAGS
-# ============================================
-
-DEBUG_MODE = False  # Bật để xem log chi tiết
-SHOW_PREVIEW = True  # Hiển thị camera preview (nếu GUI)
-SIMULATE_HARDWARE = False  # Chạy không có GPIO thật (test)
-
-# ============================================
-# VALIDATION
-# ============================================
-
 def validate_config():
-    """Kiểm tra config có hợp lệ không"""
-    errors = []
-    
-    # Check GPIO
-    if RELAY_PIN < 0:
-        errors.append("RELAY_PIN phải >= 0")
-    
-    # Check ROI
-    if ROI_W > FRAME_WIDTH or ROI_H > FRAME_HEIGHT:
-        errors.append("ROI vượt quá kích thước frame")
-    
-    # Check Telegram
-    if TELEGRAM_TOKEN == "YOUR_BOT_TOKEN_HERE":
-        print("⚠️  WARNING: Telegram token chưa được set. Cảnh báo sẽ KHÔNG gửi được.")
-    
-    # Check logs
-    try:
-        LOG_DIR.mkdir(exist_ok=True)
-    except Exception as e:
-        errors.append(f"Không thể tạo LOG_DIR: {e}")
-    
-    if errors:
-        print("❌ CONFIG ERRORS:")
-        for err in errors:
-            print(f"  - {err}")
-        return False
-    
-    print("✅ Config validated successfully")
+    """Kiểm tra config quan trọng"""
+    if not TELEGRAM_TOKEN or "AAEuNbl" in TELEGRAM_TOKEN:
+        print("⚠️  WARNING: Telegram Token chưa được cấu hình đúng trong .env")
+    else:
+        print("✅ Telegram Config: LOADED from .env")
     return True
-
 
 if __name__ == "__main__":
     validate_config()
-    print("\n📋 Active Configuration:")
-    print(f"  Relay PIN: {RELAY_PIN}")
-    print(f"  Camera: {CAMERA_WIDTH}x{CAMERA_HEIGHT} → {FRAME_WIDTH}x{FRAME_HEIGHT}")
-    print(f"  ROI: ({ROI_X}, {ROI_Y}, {ROI_W}, {ROI_H})")
-    print(f"  Telegram: {'✅' if TELEGRAM_TOKEN != 'YOUR_BOT_TOKEN_HERE' else '❌'}")
