@@ -1,12 +1,11 @@
-# config.py
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# HARDWARE
+
 RELAY_PIN = 17 
 
-# CAMERA CONFIG - Tối ưu cho Logitech C270 trên Pi B+
+
 CAMERA_INDEX = 0
 CAMERA_WIDTH  = 160  # Hạ xuống mức thấp nhất để tránh timeout
 CAMERA_HEIGHT = 120
