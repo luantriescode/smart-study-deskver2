@@ -3,64 +3,86 @@ import cv2
 import threading
 from flask import Flask, Response
 import config
+
+# Import đúng cấu trúc thư mục [cite: 9]
 from vision.camera import Camera
 from vision.motion_detector import MotionDetector
+from vision.face_detector import FaceDetector
 from hardware.relay import RelayController
+from communication.telegram_bot import TelegramBot
 
-# --- KHỞI TẠO CÁC MODULE ---
+# --- KHỞI TẠO ---
 app = Flask(__name__)
 cam = Camera(device_id=config.CAMERA_INDEX, width=config.CAMERA_WIDTH, height=config.CAMERA_HEIGHT)
-detector = MotionDetector()
+motion_engine = MotionDetector()
+face_engine = FaceDetector()
 relay = RelayController()
+bot = TelegramBot()
 
-# Biến toàn cục để chia sẻ trạng thái
+# Biến chia sẻ giữa các luồng
 latest_frame = None
-last_motion_time = time.time()
 is_light_on = False
+last_motion_time = time.time()
+slouch_start_time = 0
+warning_cooldown = 0
 
 def logic_thread():
-    global latest_frame, last_motion_time, is_light_on
-    print("🚀 Logic tự động đang chạy...")
+    """Luồng xử lý AI, Relay và Telegram [cite: 11, 12, 13]"""
+    global latest_frame, is_light_on, last_motion_time, slouch_start_time, warning_cooldown
     
+    print("🧠 AI & Logic Thread đang chạy...")
     while True:
         success, frame = cam.read()
-        if not success:
-            continue
+        if not success: continue
         
-        # Lưu frame để Web Stream sử dụng
+        # Cập nhật frame cho Web Stream
         latest_frame = frame.copy()
 
-        # 1. Phát hiện chuyển động trong ROI
-        has_motion, _ = detector.detect(frame)
+        # 1. Phát hiện người (Step 4) [cite: 15, 18]
+        person_present, _ = motion_engine.detect(frame)
 
-        # 2. Xử lý Logic Relay
-        if has_motion:
+        if person_present:
             last_motion_time = time.time()
             if not is_light_on:
-                print("👤 PHÁT HIỆN NGƯỜI -> BẬT ĐÈN")
                 relay.turn_on()
                 is_light_on = True
+                print("💡 Đèn BẬT")
+
+            # 2. Check tư thế & Ngủ gật (Step 5, 6) [cite: 15, 18]
+            # Chỉ chạy AI khi có người để tiết kiệm CPU cho Pi B+
+            is_bad, face_box = face_engine.analyze_pose(frame)
+            
+            if is_bad:
+                if slouch_start_time == 0: slouch_start_time = time.time()
+                duration = time.time() - slouch_start_time
+                
+                # Nếu sai tư thế > 5s và hết cooldown (Step 7) [cite: 7, 15]
+                if duration > 5 and time.time() > warning_cooldown:
+                    bot.send_alert("⚠️ Cảnh báo: Bạn đang ngồi sai tư thế hoặc ngủ gật!", frame)
+                    warning_cooldown = time.time() + 60 # Chờ 1 phút mới báo lại
+            else:
+                slouch_start_time = 0
         else:
-            elapsed = time.time() - last_motion_time
-            if is_light_on and elapsed > config.PERSON_LOST_DELAY:
-                print(f"🌑 KHÔNG CÓ NGƯỜI ({int(elapsed)}s) -> TẮT ĐÈN")
+            # Logic tắt đèn sau 10s (Step 4) [cite: 15, 18]
+            if is_light_on and (time.time() - last_motion_time > config.PERSON_LOST_DELAY):
                 relay.turn_off()
                 is_light_on = False
-        
-        time.sleep(0.1) # Giảm tải CPU cho Pi B+
+                print("🌑 Đèn TẮT")
+
+        time.sleep(0.1) # Rất quan trọng để Pi B+ không treo
 
 def generate_frames():
+    """Luồng đẩy ảnh lên Web Dashboard (Step 8) [cite: 7]"""
     global latest_frame
     while True:
-        if latest_frame is None:
-            continue
+        if latest_frame is None: continue
         
-        # Vẽ ROI lên frame để bạn xem trên Web và căn chỉnh
-        frame_display = cam.draw_roi(latest_frame.copy(), 
-                                    (config.ROI_X, config.ROI_Y, config.ROI_W, config.ROI_H))
+        # Vẽ khung ROI và Face để debug trực tiếp trên Web
+        frame_web = latest_frame.copy()
+        cv2.rectangle(frame_web, (config.ROI_X, config.ROI_Y), 
+                      (config.ROI_X + config.ROI_W, config.ROI_Y + config.ROI_H), (0, 255, 0), 2)
         
-        # Nén JPEG để truyền qua Web
-        ret, buffer = cv2.imencode('.jpg', frame_display, [int(cv2.IMWRITE_JPEG_QUALITY), 30])
+        ret, buffer = cv2.imencode('.jpg', frame_web, [int(cv2.IMWRITE_JPEG_QUALITY), 30])
         if not ret: continue
         
         yield (b'--frame\r\n'
@@ -68,20 +90,20 @@ def generate_frames():
 
 @app.route('/')
 def index():
-    return f"<html><body style='background:#000;color:#0f0;text-align:center;'><h2>Smart Desk Monitor</h2><img src='/video_feed' style='border:2px solid #0f0;'><p>Ngồi vào khung xanh để test Relay!</p></body></html>"
+    return "<html><body style='background:#000;color:#0f0;text-align:center;'><h2>Smart Desk Monitor</h2><img src='/video_feed'></body></html>"
 
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
-    # Chạy Logic ở luồng riêng
+    # Chạy Logic AI ở background
     t = threading.Thread(target=logic_thread)
     t.daemon = True
     t.start()
 
-    # Chạy Web Server ở luồng chính
-    print(f"📡 Truy cập web tại: http://{config.WEB_HOST}:5000")
+    # Chạy Web Server ở luồng chính (Step 8) [cite: 7]
+    print(f"📡 Web Dashboard: http://{config.WEB_HOST}:5000")
     try:
         app.run(host=config.WEB_HOST, port=5000, threaded=True, debug=False)
     finally:
