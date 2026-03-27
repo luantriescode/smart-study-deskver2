@@ -1,44 +1,24 @@
 import RPi.GPIO as GPIO
 import time
-import config
 
-class RelayController:
-    def __init__(self, pin=None):
-        # Lấy chân GPIO từ config (mặc định là 17)
-        self.pin = pin or config.RELAY_PIN
-        
-        # Thiết lập chế độ BCM
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        
-        # Thiết lập chân Relay là OUTPUT, mặc định là LOW (Tắt)
-        GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.LOW)
-        self.state = False
+RELAY_PIN = 17
 
-    def turn_on(self):
-        """Bật Relay (Đèn sáng)"""
-        GPIO.output(self.pin, GPIO.HIGH)
-        self.state = True
-        return True
+# Setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RELAY_PIN, GPIO.OUT, initial=GPIO.LOW)
 
-    def turn_off(self):
-        """Tắt Relay (Đèn tắt)"""
-        GPIO.output(self.pin, GPIO.LOW)
-        self.state = False
-        return True
+print("🔌 Testing relay...")
+time.sleep(1)
 
-    def cleanup(self):
-        """Giải phóng GPIO khi thoát chương trình"""
-        GPIO.cleanup(self.pin)
+# Turn ON
+print("Turning relay ON (nghe CLICK?)...")
+GPIO.output(RELAY_PIN, GPIO.HIGH)
+time.sleep(2)
 
-# Test nhanh module
-if __name__ == "__main__":
-    relay = RelayController()
-    print("🔌 Đang test Relay trên GPIO 17...")
-    try:
-        print("💡 BẬT ĐÈN..."); relay.turn_on()
-        time.sleep(2)
-        print("🌑 TẮT ĐÈN..."); relay.turn_off()
-        time.sleep(1)
-    finally:
-        relay.cleanup()
+# Turn OFF
+print("Turning relay OFF (nghe CLICK?)...")
+GPIO.output(RELAY_PIN, GPIO.LOW)
+time.sleep(1)
+
+GPIO.cleanup()
+print("✅ Test completed")
