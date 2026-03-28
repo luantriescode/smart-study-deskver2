@@ -1,36 +1,30 @@
 import cv2
 import os
-import config
 
 class FaceDetector:
     def __init__(self):
-        # Trỏ trực tiếp vào file nằm ở thư mục gốc dự án
-        cascade_path = os.path.join(os.getcwd(), 'haarcascade_frontalface_default.xml')
-        
-        if not os.path.exists(cascade_path):
-            print(f"❌ Cảnh báo: Không tìm thấy {cascade_path}. Vui lòng chạy lệnh wget để tải file.")
-            
-        self.face_cascade = cv2.CascadeClassifier(cascade_path)
+        self.cascade_path = os.path.join(os.getcwd(), 'haarcascade_frontalface_default.xml')
+        self.face_cascade = cv2.CascadeClassifier(self.cascade_path)
+        if self.face_cascade.empty():
+            print("❌ AI ERROR: Không load được file XML!")
+        else:
+            print("✅ AI READY: Model nhận diện mặt đã sẵn sàng.")
 
     def analyze_pose(self, frame):
-        """Trả về: (is_bad_posture, face_coords)"""
-        if self.face_cascade.empty():
-            return False, None
-
-        # Resize nhỏ để giảm tải cho Pi B+ (Step 3 Optimization) [cite: 3]
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        if self.face_cascade.empty(): return False, None
         
-        # detectMultiScale: tìm khuôn mặt
-        faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Giảm minNeighbors xuống 2 để nhạy hơn, cân chỉnh scaleFactor 1.1
+        faces = self.face_cascade.detectMultiScale(gray, 1.1, 2)
         
         is_bad_posture = False
         face_data = None
 
-        for (x, y, w, h) in faces:
+        if len(faces) > 0:
+            (x, y, w, h) = faces[0]
             face_data = (x, y, w, h)
-            # Step 6: Nếu mặt thấp hơn 60% khung hình [cite: 6]
-            if y > (frame.shape[0] * 0.6):
+            # Ngưỡng y > 50% khung hình là sai tư thế
+            if y > (frame.shape[0] * 0.5):
                 is_bad_posture = True
-            break 
             
         return is_bad_posture, face_data
