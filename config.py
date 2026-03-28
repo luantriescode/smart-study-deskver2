@@ -25,3 +25,4 @@ PERSON_LOST_DELAY = 3   # Thời gian chờ tắt đèn (giây)
 
 # --- NETWORK ---
 WEB_HOST = os.getenv("WEB_HOST", "192.168.1.8")
+WEB_PORT = os.getenv("WEB_PORT","5000")
