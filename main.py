@@ -145,9 +145,9 @@ if __name__ == "__main__":
     t.start()
     
     # Chạy Web Server
-    print(f"📡 Web Dashboard online tại: http://{config.WEB_HOST}:5000")
+    print(f"📡 Web Dashboard online tại: http://{config.WEB_HOST}:{config.WEB_PORT}")
     try:
-        app.run(host=config.WEB_HOST, port=5000, threaded=True, debug=False)
+        app.run(host=config.WEB_HOST, port=config.WEB_PORT, threaded=True, debug=False)
     finally:
         relay.turn_off()
         cam.release()
