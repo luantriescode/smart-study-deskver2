@@ -27,27 +27,24 @@ slouch_start_time = 0
 warning_cooldown = 0
 
 def logic_thread():
-    """Luồng xử lý AI, Relay và Telegram [cite: 11, 12, 13]"""
     global latest_frame, is_light_on, last_motion_time, slouch_start_time, warning_cooldown
     
-    print("🧠 AI & Logic Thread đang chạy...")
     while True:
         success, frame = cam.read()
         if not success: continue
         
-        # Cập nhật frame cho Web Stream
         latest_frame = frame.copy()
 
-        # 1. Phát hiện người (Step 4) [cite: 15, 18]
+        # Step 4: Motion Detection [cite: 3, 15]
         person_present, _ = motion_engine.detect(frame)
 
         if person_present:
-            # Logic bật đèn (Đã chạy OK) [cite: 4, 15]
+            last_motion_time = time.time()
             if not is_light_on:
                 relay.turn_on()
                 is_light_on = True
 
-            # Check tư thế (Step 6) [cite: 6, 11]
+            # Step 5 & 6: Pose AI [cite: 5, 6, 18]
             is_bad, face_box = face_engine.analyze_pose(frame)
             
             if is_bad:
@@ -55,22 +52,19 @@ def logic_thread():
                     slouch_start_time = time.time()
                 
                 duration = time.time() - slouch_start_time
-                # Nếu ngồi sai tư thế quá 3 giây (Step 5/6) [cite: 15, 18]
-                if duration > 3 and time.time() > warning_cooldown:
-                    print("📤 Đang gửi tin nhắn Telegram...") [cite: 7, 13]
-                    bot.send_alert("🔴 CẢNH BÁO: Bạn đang ngồi sai tư thế hoặc ngủ gật!", frame)
-                    # Chờ 30 giây mới cho phép gửi lại để tránh treo mạng Pi [cite: 1, 13]
-                    warning_cooldown = time.time() + 30 
+                # Step 7: Telegram Alert [cite: 7, 13]
+                if duration > 5 and time.time() > warning_cooldown:
+                    bot.send_alert("⚠️ Cảnh báo: Ngồi sai tư thế!", frame)
+                    warning_cooldown = time.time() + 60 
             else:
                 slouch_start_time = 0
         else:
-            # Logic tắt đèn sau 10s (Step 4) [cite: 15, 18]
-            if is_light_on and (time.time() - last_motion_time > config.PERSON_LOST_DELAY):
+            # Logic tắt đèn sau 10s [cite: 15]
+            if is_light_on and (time.time() - last_motion_time > 10):
                 relay.turn_off()
                 is_light_on = False
-                print("🌑 Đèn TẮT")
 
-        time.sleep(0.1) # Rất quan trọng để Pi B+ không treo
+        time.sleep(0.1)
 
 def generate_frames():
     """Luồng đẩy ảnh lên Web Dashboard (Step 8) [cite: 7]"""
