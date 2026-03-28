@@ -42,24 +42,25 @@ def logic_thread():
         person_present, _ = motion_engine.detect(frame)
 
         if person_present:
-            last_motion_time = time.time()
+            # Logic bật đèn (Đã chạy OK) [cite: 4, 15]
             if not is_light_on:
                 relay.turn_on()
                 is_light_on = True
-                print("💡 Đèn BẬT")
 
-            # 2. Check tư thế & Ngủ gật (Step 5, 6) [cite: 15, 18]
-            # Chỉ chạy AI khi có người để tiết kiệm CPU cho Pi B+
+            # Check tư thế (Step 6) [cite: 6, 11]
             is_bad, face_box = face_engine.analyze_pose(frame)
             
             if is_bad:
-                if slouch_start_time == 0: slouch_start_time = time.time()
-                duration = time.time() - slouch_start_time
+                if slouch_start_time == 0: 
+                    slouch_start_time = time.time()
                 
-                # Nếu sai tư thế > 5s và hết cooldown (Step 7) [cite: 7, 15]
-                if duration > 5 and time.time() > warning_cooldown:
-                    bot.send_alert("⚠️ Cảnh báo: Bạn đang ngồi sai tư thế hoặc ngủ gật!", frame)
-                    warning_cooldown = time.time() + 60 # Chờ 1 phút mới báo lại
+                duration = time.time() - slouch_start_time
+                # Nếu ngồi sai tư thế quá 3 giây (Step 5/6) [cite: 15, 18]
+                if duration > 3 and time.time() > warning_cooldown:
+                    print("📤 Đang gửi tin nhắn Telegram...") [cite: 7, 13]
+                    bot.send_alert("🔴 CẢNH BÁO: Bạn đang ngồi sai tư thế hoặc ngủ gật!", frame)
+                    # Chờ 30 giây mới cho phép gửi lại để tránh treo mạng Pi [cite: 1, 13]
+                    warning_cooldown = time.time() + 30 
             else:
                 slouch_start_time = 0
         else:
