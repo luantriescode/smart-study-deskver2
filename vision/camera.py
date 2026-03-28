@@ -34,21 +34,19 @@ class Camera:
     def read(self):
         ret, frame = self.cap.read()
         if ret:
-            # 1. Tăng độ sáng và tương phản tự động (CLAHE)
-            lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-            l, a, b = cv2.split(lab)
-            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-            cl = clahe.apply(l)
-            limg = cv2.merge((cl,a,b))
-            frame = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
-
-            # 2. Áp dụng bộ lọc làm sắc nét (Sharpening Filter)
+            # 1. Tăng độ tương phản nhưng GIỮ NGUYÊN MÀU SẮC
+            # Sử dụng bộ lọc Sharpen trực tiếp trên ảnh màu
             kernel = np.array([[-1,-1,-1], 
                                [-1, 9,-1], 
                                [-1,-1,-1]])
-            frame = cv2.filter2D(frame, -1, kernel)
+            sharpened = cv2.filter2D(frame, -1, kernel)
             
-            return True, frame
+            # 2. Tăng độ bão hòa màu một chút để bù lại phần ảnh mờ
+            hsv = cv2.cvtColor(sharpened, cv2.COLOR_BGR2HSV)
+            hsv[:,:,1] = cv2.multiply(hsv[:,:,1], 1.2) # Tăng 20% độ đậm màu
+            color_frame = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            
+            return True, color_frame
         return False, None
 
     def draw_roi(self, frame, roi):
